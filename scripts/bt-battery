@@ -1,0 +1,28 @@
+#!/bin/bash
+# Shows battery % of Bluetooth devices known to UPower (BlueZ-backed).
+
+BUTTON=${button:-}
+LABEL_ICON=${icon:-$''}
+LABEL_COLOR=${label_color:-$(xrescat i3xrocks.label.color "#7B8394")}
+VALUE_COLOR=${color:-$(xrescat i3xrocks.value.color "#D8DEE9")}
+CRIT_COLOR=$(xrescat i3xrocks.critical.color "#BF616A")
+VALUE_FONT=${font:-$(xrescat i3xrocks.value.font "Source Code Pro Medium 13")}
+
+out=""
+while read -r path; do
+    info=$(upower -i "$path")
+    grep -q 'native-path:\s*/org/bluez/' <<<"$info" || continue
+    pct=$(sed -n 's/^\s*percentage:\s*\([0-9]*\)%.*/\1/p' <<<"$info" | head -n1)
+    [ -n "$pct" ] || continue
+    name=$(sed -n 's/^\s*model:\s*//p' <<<"$info" | head -n1)
+    [ -n "$name" ] || name=$(sed -n 's/^\s*serial:\s*//p' <<<"$info" | head -n1)
+    color=$VALUE_COLOR
+    [ "$pct" -le 20 ] && color=$CRIT_COLOR
+    out+="<span font_desc=\"${VALUE_FONT}\" color=\"${color}\">${name} ${pct}%</span>  "
+done < <(upower -e)
+
+[ -n "$out" ] && echo "<span font_desc=\"${VALUE_FONT}\" color=\"${LABEL_COLOR}\">${LABEL_ICON} </span>${out%  }"
+
+if [ "x${BUTTON}" == "x1" ]; then
+    /usr/bin/i3-msg -q exec "regolith-control-center bluetooth"
+fi

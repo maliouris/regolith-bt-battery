@@ -1,0 +1,4 @@
+[bt-battery]
+command=~/.config/regolith3/i3xrocks/scripts/bt-battery
+interval=60
+markup=pango
